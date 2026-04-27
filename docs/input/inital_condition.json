@@ -1,0 +1,99 @@
+{
+    "red" : {
+        "entity_list" : [
+            {
+                "name": "T18",
+                "id" : "1003004000",
+                "type": "plane",
+                "ability" : {
+                    "find" : true,
+                    "fix" : true,
+                    "track" : true,
+                    "target" : true,
+                    "attack" : false,
+                    "assess" : true
+                }
+            },
+            {
+                "name": "金雕光电",
+                "id" : "1003004001",
+                "type": "plane",
+                "ability" : {
+                    "find" : true,
+                    "fix" : true,
+                    "track" : true,
+                    "target" : true,
+                    "attack" : false,
+                    "assess" : true
+                }
+            },
+            {
+                "name": "j_16",
+                "id" : "1003004002",
+                "type": "plane",
+                "ability" : {
+                    "find" : false,
+                    "fix" : false,
+                    "track" : false,
+                    "target" : false,
+                    "attack" : true,
+                    "assess" : false
+                }
+            },
+            {
+                "name": "sdjhm",
+                "id" : "1003004003",
+                "type": "ship"
+
+            },
+            {
+                "name": "PHL_191",
+                "id" : "1003004004",
+                "type": "ground_equipment",
+                "ability" : {
+                    "find" : false,
+                    "fix" : false,
+                    "track" : false,
+                    "target" : false,
+                    "attack" : true,
+                    "assess" : false
+                }
+            }
+        ]
+    },
+    "blue" : {
+        "entity_list" : [
+            {
+                "name": "haimas",
+                "id" : "2003005000",
+                "type": "ground_equipment",
+                "ability" : {
+                    "find" : true,
+                    "fix" : true,
+                    "track" : true,
+                    "target" : true,
+                    "attack" : false,
+                    "assess" : true
+                }
+            },
+            {
+                "name": "lkhm",
+                "id" : "2003005001",
+                "type": "ship"
+            },
+            {
+                "name": "duci",
+                "id" : "2003005002",
+                "type": "ground_equipment",
+                "ability" : {
+                    "find" : false,
+                    "fix" : false,
+                    "track" : false,
+                    "target" : false,
+                    "attack" : true,
+                    "assess" : false
+                }
+            }
+        ]
+    }
+}

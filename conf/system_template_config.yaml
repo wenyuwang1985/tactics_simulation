@@ -1,0 +1,10 @@
+redis:
+  host: 127.0.0.1
+  port: 6379
+  password: "your_password"
+  database: 0
+  timeout: 5000 # 连接超时时间(ms)
+
+# 仿真配置模板
+tactics_config:
+  file_path: "../docs/input/inital_condition.json"

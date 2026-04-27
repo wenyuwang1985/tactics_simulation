@@ -1,0 +1,3 @@
+add_subdirectory(tactics_reader)
+add_subdirectory(message_sender)
+add_subdirectory(result_receiver)

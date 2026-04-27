@@ -1,0 +1,32 @@
+[
+    {
+        "red_strategy": [ "T18侦察", "T18", "find"],
+        "blue_strategy": ["海马斯躲避侦察", "海马斯", "假目标干扰"],
+        "phase": "find"
+    },
+    {
+        "red_strategy": ["金雕光电侦察", "JDGD", "fix"],
+        "blue_strategy": ["海马斯躲避侦察", "海马斯", "地形遮蔽"],
+        "phase": "fix"
+    },
+    {
+        "red_strategy": ["T18跟踪侦察", "T18", "track"],
+        "blue_strategy": ["海马斯躲避侦察", "海马斯", "地形遮蔽"],
+        "phase": "track"
+    },
+    {
+        "red_strategy": ["金雕系列侦察", "JDGD", "target"],
+        "blue_strategy": ["海马斯干扰瞄准施放烟幕", "海马斯", "施放烟幕"],
+        "phase": "target"
+    },
+    {
+        "red_strategy": ["巡飞弹蜂群区域封锁", "XFD", "XFDDJ"],
+        "blue_strategy": ["阻塞式卫星导航干扰", "海马斯", "车载卫星导航干扰设备"],
+        "phase": "engege"
+    },
+    {
+        "red_strategy": ["T18无人机侦察", "T18", "YHYD"],
+        "blue_strategy": ["箔条云干扰", "海马斯", "干扰敌方雷达和光学侦察设备"],
+        "phase": "assess"
+    }
+]
