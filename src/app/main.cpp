@@ -3,10 +3,7 @@
 #include "log/Log.h"
 #include "config/ClientConfig.h"
 
-#include "TacticsReader.h"
-//#include "MessageSender.h"
-#include "ResultReceiver.h"
-#include "TestEvent.h"
+#include "test.h"
 
 int main(int argc, char* argv[]) {
     logging::init(
@@ -23,22 +20,9 @@ int main(int argc, char* argv[]) {
     //     return 0;
     // }
 
-    tactics::InitialCondition condition;
-    if (!tactics::loadInitialCondition(app::TACTICS_CONFIG_FILE_PATH, condition)) {
-        LOG_ERROR("Failed to load initial condition");
-        spdlog::shutdown();
-        return 1;
-    }
+    test01();
 
-    LOG_INFO("Loaded {} red entities, {} blue entities",
-             condition.red.entity_list.size(),
-             condition.blue.entity_list.size());
-
-    // test_dds();
-    test_redis();
-    runLibeventTest();
-
-    LOG_INFO("client end");
+    LOG_INFO("system end");
     spdlog::shutdown();
     return 0;
 }
