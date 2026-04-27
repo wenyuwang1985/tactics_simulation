@@ -5,7 +5,7 @@
 
 #include "test.h"
 
-int main(int argc, char* argv[]) {
+int main() {
     logging::init(
         app::APP_LOG_NAME,
         app::APP_LOG_FILE,
@@ -14,11 +14,11 @@ int main(int argc, char* argv[]) {
 
     LOG_INFO("system start");
 
-    // if (!config::ClientConfig::instance().load(app::CONFIG_FILE_PATH)) {
-    //     LOG_ERROR("Failed to load config file!");
-    //     spdlog::shutdown();
-    //     return 0;
-    // }
+    if (!config::ClientConfig::instance().load(app::CONFIG_FILE_PATH)) {
+        LOG_ERROR("Failed to load config file: {}", app::CONFIG_FILE_PATH);
+        spdlog::shutdown();
+        return 1;
+    }
 
     test01();
 

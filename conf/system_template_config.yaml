@@ -1,7 +1,7 @@
 redis:
   host: 127.0.0.1
   port: 6379
-  password: "your_password"
+  password: ""
   database: 0
   timeout: 5000 # 连接超时时间(ms)
 

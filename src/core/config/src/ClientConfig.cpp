@@ -1,153 +1,108 @@
 #include "config/ClientConfig.h"
-#include <ryml.hpp>
-#include <ryml_std.hpp>
+
 #include <fstream>
 #include <iostream>
 #include <sstream>
 
+#include <ryml.hpp>
+#include <ryml_std.hpp>
+
 namespace config {
 
-static AuthMode stringToAuthMode(const std::string& mode) {
-    if (mode == "cookie") return AuthMode::Cookie;
-    if (mode == "bearer") return AuthMode::Bearer;
-    return AuthMode::None;
+namespace {
+
+constexpr char REDIS_NODE[] = "redis";
+constexpr char TACTICS_NODE[] = "tactics_config";
+constexpr char HOST_NODE[] = "host";
+constexpr char PORT_NODE[] = "port";
+constexpr char PASSWORD_NODE[] = "password";
+constexpr char DATABASE_NODE[] = "database";
+constexpr char TIMEOUT_NODE[] = "timeout";
+constexpr char FILE_PATH_NODE[] = "file_path";
+
+std::string toStdString(c4::csubstr value) {
+    return std::string(value.data(), value.size());
 }
 
-// 从 ryml csubstr 安全提取 std::string
-static std::string toStdString(c4::csubstr s) {
-    return std::string(s.data(), s.size());
+bool openConfigFile(const std::string& file_path, std::ifstream& input_stream) {
+    input_stream.open(file_path, std::ios::binary);
+    return input_stream.is_open();
 }
 
-// 解析单个模块节点的 endpoints
-static void parseModule(const c4::yml::ConstNodeRef& node,
-                        ModuleConfig& out, AuthMode systemMode) {
-    out.auth_mode = systemMode;
+std::string readConfigContent(std::ifstream& input_stream) {
+    std::stringstream content_stream;
+    content_stream << input_stream.rdbuf();
+    return content_stream.str();
+}
 
-    if (node.has_child("endpoints")) {
-        for (c4::yml::ConstNodeRef::const_iterator it = node["endpoints"].begin();
-             it != node["endpoints"].end(); ++it) {
-            c4::yml::ConstNodeRef ep = *it;
-            std::string key = toStdString(ep.key());
-            std::string val = toStdString(ep.val());
-            out.endpoints[key] = val;
-        }
+void parseRedisConfig(
+    const c4::yml::ConstNodeRef& redis_node,
+    RedisConfig& redis_config
+) {
+    if (redis_node.has_child(HOST_NODE)) {
+        redis_config.host = toStdString(redis_node[HOST_NODE].val());
+    }
+    if (redis_node.has_child(PORT_NODE)) {
+        redis_node[PORT_NODE] >> redis_config.port;
+    }
+    if (redis_node.has_child(PASSWORD_NODE)) {
+        redis_config.password = toStdString(redis_node[PASSWORD_NODE].val());
+    }
+    if (redis_node.has_child(DATABASE_NODE)) {
+        redis_node[DATABASE_NODE] >> redis_config.database;
+    }
+    if (redis_node.has_child(TIMEOUT_NODE)) {
+        redis_node[TIMEOUT_NODE] >> redis_config.timeout_ms;
     }
 }
 
-ClientConfig& ClientConfig::instance() {
-    static ClientConfig inst;
-    return inst;
+void parseTacticsConfig(
+    const c4::yml::ConstNodeRef& tactics_node,
+    TacticsConfig& tactics_config
+) {
+    if (!tactics_node.has_child(FILE_PATH_NODE)) {
+        return;
+    }
+    tactics_config.file_path = toStdString(tactics_node[FILE_PATH_NODE].val());
 }
 
-bool ClientConfig::load(const std::string& filePath) {
-    servers_.clear();
-    biz_ = BizConfig();
-    conflict_ = ConflictConfig();
-    timeoutMs_ = 5000;
-    connectTimeoutMs_ = 3000;
-    retryIntervalMs_ = 1000;
+} // namespace
 
-    std::ifstream ifs(filePath, std::ios::binary);
-    if (!ifs.is_open()) {
+ClientConfig& ClientConfig::instance() {
+    static ClientConfig instance;
+    return instance;
+}
+
+bool ClientConfig::load(const std::string& file_path) {
+    reset();
+
+    std::ifstream input_stream;
+    if (!openConfigFile(file_path, input_stream)) {
         return false;
     }
 
-    std::stringstream ss;
-    ss << ifs.rdbuf();
-    std::string content = ss.str();
+    const std::string content = readConfigContent(input_stream);
 
     try {
         ryml::Tree tree = ryml::parse_in_arena(ryml::to_csubstr(content));
-        ryml::ConstNodeRef root = tree.rootref();
+        const ryml::ConstNodeRef root = tree.rootref();
 
-        // 1. 网络设置
-        if (root.has_child("network")) {
-            ryml::ConstNodeRef net = root["network"];
-            if (net.has_child("timeout_ms")) {
-                net["timeout_ms"] >> timeoutMs_;
-            }
-            if (net.has_child("connect_timeout_ms")) {
-                net["connect_timeout_ms"] >> connectTimeoutMs_;
-            }
-            if (net.has_child("retry_interval_ms")) {
-                net["retry_interval_ms"] >> retryIntervalMs_;
-            }
-
-            // 服务器地址列表
-            if (net.has_child("servers")) {
-                ryml::ConstNodeRef serversNode = net["servers"];
-                for (size_t i = 0; i < serversNode.num_children(); ++i) {
-                    ryml::ConstNodeRef entry = serversNode[i];
-                    ServerEntry se;
-                    if (entry.has_child("name")) {
-                        se.name = toStdString(entry["name"].val());
-                    }
-                    if (entry.has_child("url")) {
-                        se.url = toStdString(entry["url"].val());
-                    }
-                    if (!se.url.empty()) {
-                        servers_.push_back(se);
-                    }
-                }
-            }
+        if (root.has_child(REDIS_NODE)) {
+            parseRedisConfig(root[REDIS_NODE], redis_config_);
         }
-
-        // 2. 系统配置
-        if (root.has_child("systems")) {
-            ryml::ConstNodeRef systems = root["systems"];
-
-            // biz 系统
-            if (systems.has_child("biz")) {
-                ryml::ConstNodeRef bizNode = systems["biz"];
-
-                std::string modeStr;
-                if (bizNode.has_child("auth_mode")) {
-                    bizNode["auth_mode"] >> modeStr;
-                }
-                AuthMode bizMode = stringToAuthMode(modeStr);
-                biz_.auth_mode = bizMode;
-
-                if (bizNode.has_child("modules")) {
-                    ryml::ConstNodeRef mods = bizNode["modules"];
-                    if (mods.has_child("auth"))
-                        parseModule(mods["auth"], biz_.auth, bizMode);
-                    if (mods.has_child("probe"))
-                        parseModule(mods["probe"], biz_.probe, bizMode);
-                    if (mods.has_child("menu"))
-                        parseModule(mods["menu"], biz_.menu, bizMode);
-                    if (mods.has_child("fabric"))
-                        parseModule(mods["fabric"], biz_.fabric, bizMode);
-                }
-            }
-
-            // conflict 系统（独立 base_url）
-            if (systems.has_child("conflict")) {
-                ryml::ConstNodeRef confNode = systems["conflict"];
-
-                if (confNode.has_child("base_url")) {
-                    conflict_.base_url = toStdString(confNode["base_url"].val());
-                }
-
-                std::string modeStr;
-                if (confNode.has_child("auth_mode")) {
-                    confNode["auth_mode"] >> modeStr;
-                }
-                AuthMode confMode = stringToAuthMode(modeStr);
-                conflict_.auth_mode = confMode;
-
-                if (confNode.has_child("modules")) {
-                    ryml::ConstNodeRef mods = confNode["modules"];
-                    if (mods.has_child("analysis"))
-                        parseModule(mods["analysis"], conflict_.analysis, confMode);
-                }
-            }
+        if (root.has_child(TACTICS_NODE)) {
+            parseTacticsConfig(root[TACTICS_NODE], tactics_config_);
         }
-
         return true;
-    } catch (const std::exception& e) {
-        std::cerr << "Config Parse Error: " << e.what() << std::endl;
+    } catch (const std::exception& exception) {
+        std::cerr << "Config parse error: " << exception.what() << std::endl;
         return false;
     }
+}
+
+void ClientConfig::reset() {
+    redis_config_ = RedisConfig();
+    tactics_config_ = TacticsConfig();
 }
 
 } // namespace config
